@@ -60,7 +60,7 @@ class Bosyu:
 
         # create embed
         em = discord.Embed(title=":mega: 募集", description=content, color=0x00f900)
-        em.set_author(name=self.message.author.display_name, icon_url=self.message.author.avatar_url)
+        em.set_author(name=self.message.author.name, icon_url=self.message.author.avatar_url)
         if att_max is None:
             em.add_field(name=f"参加者 | 0人", value="ｲﾅｲﾖ", inline=False)
         else:
@@ -96,13 +96,14 @@ class Bosyu:
 
         f_value = self.embed.fields[0].value.splitlines()
         value = ""
+        f_name = member.name
 
         # add
         if add:
             if "ｲﾅｲﾖ" in f_value:
                 f_value.remove("ｲﾅｲﾖ")
-            if not "- " + member.display_name in f_value:
-                f_value.append("- " + member.display_name)
+            if not "- " + f_name in f_value:
+                f_value.append("- " + f_name)
 
             # role add
             if role is not None:
@@ -110,8 +111,8 @@ class Bosyu:
 
         # remove
         else:
-            if "- " + member.display_name in f_value:
-                f_value.remove("- " + member.display_name)
+            if "- " + f_name in f_value:
+                f_value.remove("- " + f_name)
 
             if len(f_value) == 0:
                 f_value.append("ｲﾅｲﾖ")
