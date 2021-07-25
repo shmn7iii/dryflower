@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="dryflower",
-    version="1.0",
+    version="1.1",
     author="shmn7iii",
     author_email="shmn7iii@gmail.com",
     description="dryflower is a package of DryFlowerBOT.",
