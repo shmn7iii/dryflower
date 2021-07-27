@@ -14,6 +14,21 @@ An easy recruiting library.
 以下のサンプルコードを参考にしてください。DryFlowerBOTと同様の挙動をします。
 
 ```Python
+import discord
+import dryflower
+
+intents = discord.Intents.default()
+intents.members = True
+
+client = discord.Client(intents=intents)
+
+
+@client.event
+async def on_message_delete(message):
+    if message.content.startswith("$BSDL:"):
+        await dryflower.disable(message)
+
+
 @client.event
 async def on_message(message):
     if message.author.bot:
@@ -66,6 +81,9 @@ async def on_raw_reaction_remove(payload):
     if dryflower.check_bosyu(message):
         bs = dryflower.Bosyu(message)
         await bs.remove_reaction(member)
+        
+
+client.run("TOKEN")
 ```
 
 ## もっと詳しく
