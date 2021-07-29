@@ -15,75 +15,93 @@ An easy recruiting library.
 
 ```Python
 import discord
+from discord.ext import commands
+from discord import Button, ButtonStyle, SelectMenu, SelectOption
 import dryflower
 
+# intents
 intents = discord.Intents.default()
 intents.members = True
 
-client = discord.Client(intents=intents)
+client = commands.Bot(command_prefix='!', intents=intents)
 
 
-@client.event
-async def on_message_delete(message):
-    if message.content.startswith("$BSDL:"):
-        await dryflower.disable(message)
+@client.command()
+async def dr(ctx, *args):
+    bs = dryflower.Bosyu(ctx.message)
+    await bs.generate()
 
 
-@client.event
-async def on_message(message):
-    if message.author.bot:
-        if message.content != "〆":
-            return
-
-    # bosyu
-    if message.content.startswith("!dr"):
-        bs = dryflower.Bosyu(message)
-        await bs.generate()
-
-    # sime
-    if message.content.startswith("〆"):
-        if message.reference is not None:
-            referenced_message = await message.channel.fetch_message(message.reference.message_id)
-            if dryflower.check_bosyu(referenced_message):
-                bs = dryflower.Bosyu(referenced_message)
-                await bs.sime(referenced_message)
-
-    # syuugou
-    if message.content.startswith("集合"):
-        if message.reference is not None:
-            referenced_message = await message.channel.fetch_message(message.reference.message_id)
-            if dryflower.check_bosyu(referenced_message) or dryflower.check_bosyu_sime(referenced_message):
-                bs = dryflower.Bosyu(referenced_message)
-                await bs.syuugou(referenced_message)
-
-
-@client.event
-async def on_raw_reaction_add(payload):
-    message = await channel.fetch_message(payload.message_id)
-    member = payload.member
-
-    if member.bot:
-        return
-
+@client.on_click(custom_id="hi")
+async def button_press_hi(i: discord.Interaction, button):
+    message = i.message
     if dryflower.check_bosyu(message):
         bs = dryflower.Bosyu(message)
-        await bs.add_reaction(member)
+        await bs.add_reaction(i.author)
+        await i.respond("**参加** を表明しました。", hidden=True)
+
+
+@client.on_click(custom_id="no")
+async def button_press_no(i: discord.Interaction, button):
+    message = i.message
+    if dryflower.check_bosyu(message):
+        bs = dryflower.Bosyu(message)
+        await bs.remove_reaction(i.author)
+        await i.respond("取り消しました。", hidden=True)
+
+
+@client.on_click(custom_id="control")
+async def button_press_control(i: discord.Interaction, button):
+    # if not i.member.guild_permissions.manage_messages:
+    #     await i.respond("権限がありません。募集を管理するには「メッセージを管理」権限が必要です。", hidden=True)
+    #     return
+
+    # 返信元取得できるようにmessageIDをcustom_idの後ろにくっつける
+    components = [
+        [
+            SelectMenu(custom_id=f"control-select-{i.message.id}", options=[
+                SelectOption(emoji='🚥', label='〆', value='sime', description="募集を締め切ります"),
+                SelectOption(emoji='📯', label='集合', value='syuugou', description="専用ロールで集合をかけます。"),
+                SelectOption(emoji='🗑', label='無効化', value='disable', description="募集を無効化し、ロールを削除します。")
+            ],
+                       placeholder='🔧 Select action!', max_values=3)
+        ]
+    ]
+
+    await i.respond("操作を選択してください。", components=components, hidden=True)
 
 
 @client.event
-async def on_raw_reaction_remove(payload):
-    message = await channel.fetch_message(payload.message_id)
-    member = guild.get_member(payload.user_id)
+async def on_selection_select(i: discord.Interaction, select_menu):
 
-    if member.bot:
+    message_id = select_menu.custom_id[-18:]
+    message = await i.channel.fetch_message(message_id)
+    bs = dryflower.Bosyu(message)
+    vals = select_menu.values
+
+    if "syuugou" in vals and "disable" in vals:
+        await i.respond("無効な組み合わせです。ロールへのメンション通知と同時に該当ロールが削除されてしまいます。"
+                        "「無効化」は募集した企画そのものが終了した後に行うことを推奨しています。", hidden=True)
         return
 
-    if dryflower.check_bosyu(message):
-        bs = dryflower.Bosyu(message)
-        await bs.remove_reaction(member)
-        
+    if "sime" in vals:
+        await bs.sime(message)
+        # await i.respond("正常に締め切りました。", hidden=True)
+    if "syuugou" in vals:
+        await bs.syuugou(message)
+        # await i.respond("集合をかけました。", hidden=True)
+    if "disable" in vals:
+        await bs.disable(message)
+        # await i.respond("無効化しました。", hidden=True)
 
-client.run("TOKEN")
+    await i.respond("OK!", hidden=True)
+
+    return
+
+
+# Botの起動とDiscordサーバーへの接続
+client.run(setting.TOKEN)
+
 ```
 
 ## もっと詳しく
