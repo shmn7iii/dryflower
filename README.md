@@ -6,7 +6,7 @@ An easy recruiting library.
 
 言語: Python-3.9.1
 
-外部ライブラリ: discord.py, datetime
+外部ライブラリ: discord.py, datetime, discord.py-message-component
 
 ライセンス: MIT-License
 
